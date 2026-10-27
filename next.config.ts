@@ -3,8 +3,9 @@ import type { NextConfig } from 'next';
 const nextConfig: NextConfig = {
   poweredByHeader: false,
   images: {
-    // Public gallery previews are on-chain inscriptions served by ORDFS.
-    remotePatterns: [{ protocol: 'https', hostname: 'ordfs.network', pathname: '/content/**' }],
+    // Gallery images come from our own /img/<id> proxy (unoptimized), so Cloudflare scans the original bytes.
+    // No remote patterns: nothing is loaded from ordfs.network in the browser.
+    remotePatterns: [],
     formats: ['image/avif', 'image/webp'],
   },
   async headers() {

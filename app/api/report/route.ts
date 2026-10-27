@@ -2,9 +2,11 @@ import { NextRequest, NextResponse } from 'next/server';
 import { API_BASE, REPORT_REASONS, isOutpoint } from '@/lib/bpics';
 
 /**
- * Same-origin relay to bit-sign POST /api/bitsign/bpics/report. bit-sign's middleware blocks cross-site
- * POSTs from the browser, so the report form posts here and this forwards it unchanged (no auth, no
- * secrets). Validation mirrors bit-sign's parseReportBody so bad input never leaves this site.
+ * FALLBACK relay to bit-sign POST /api/bitsign/bpics/report. The report form now posts straight to bit-sign
+ * from the browser (bit-sign allows CORS from the bpicsx origins on that path), because through this relay
+ * Vercel replaces x-forwarded-for and every report looks like one reporter. The form only uses this route
+ * when the direct request fails at the network level, so a report is never lost during rollout.
+ * No auth, no secrets. Validation mirrors bit-sign's parseReportBody so bad input never leaves this site.
  */
 export async function POST(request: NextRequest) {
   const b = (await request.json().catch(() => null)) as Record<string, unknown> | null;

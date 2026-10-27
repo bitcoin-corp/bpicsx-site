@@ -4,6 +4,8 @@
  * GET  /api/bitsign/bpics/feed    → { items: PublicItem[], open?: false }  no auth. Approved + unhidden only,
  *                                   ranked by paid_sats. Returns [] with open:false until the market opens.
  * POST /api/bitsign/bpics/report  { item_id, reason, details? }  sign-in optional, rate-limited 10/min.
+ *                                   The report form posts here straight from the browser (bit-sign allows
+ *                                   CORS from the bpicsx origins on this one path) so the real IP is counted.
  *
  * This site never uploads, generates or pays. Escrow keys and classifier scores are never in the feed.
  */
@@ -44,10 +46,16 @@ export type ReportReason = (typeof REPORT_REASONS)[number]['value'];
 
 const OUTPOINT = /^[0-9a-f]{64}_\d{1,6}$/;
 export const isOutpoint = (s: string) => OUTPOINT.test(s);
-const SAFE_IMAGE = new Set(['image/png', 'image/jpeg', 'image/gif', 'image/webp', 'image/avif']);
+export const SAFE_IMAGE: ReadonlySet<string> = new Set(['image/png', 'image/jpeg', 'image/gif', 'image/webp', 'image/avif']);
 
-/** The preview is the on-chain inscription at vout 0 (the item id), served by ORDFS. */
-export const previewUrl = (id: string) => `https://ordfs.network/content/${id}`;
+/** The preview is the on-chain inscription at vout 0 (the item id), stored on ORDFS. Server-side only. */
+export const ordfsUrl = (id: string) => `https://ordfs.network/content/${id}`;
+
+/**
+ * What the gallery shows: the image served from OUR origin (app/img/[id]/route.ts), never ordfs.network
+ * directly, so Cloudflare's CSAM Scanning Tool sees every image once bpicsx.com is proxied.
+ */
+export const previewUrl = (id: string) => `/img/${id}`;
 
 export type Feed = { items: PublicItem[]; open: boolean; error?: string };
 

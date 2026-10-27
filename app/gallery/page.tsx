@@ -35,7 +35,7 @@ export default async function Gallery() {
           {items.map((it, i) => (
             <figure className="item" key={it.id}>
               <div className="img">
-                <Image src={previewUrl(it.id)} alt={it.title || 'Untitled picture'} fill sizes="(max-width:600px) 100vw, 280px" priority={i < 4} />
+                <Image src={previewUrl(it.id)} alt={it.title || 'Untitled picture'} fill sizes="(max-width:600px) 100vw, 280px" priority={i < 4} unoptimized />
               </div>
               <figcaption>
                 <b>{it.title || 'Untitled'}</b>
