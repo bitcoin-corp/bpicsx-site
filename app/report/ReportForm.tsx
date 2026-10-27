@@ -3,7 +3,26 @@
 import { useState } from 'react';
 import { REPORT_REASONS, isOutpoint } from '@/lib/bpics';
 
-export default function ReportForm({ initialItem }: { initialItem: string }) {
+/**
+ * Posts STRAIGHT to bit-sign from the browser, so bit-sign sees the reporter's own IP (its 10/min limit and
+ * "3 different reporters hide it" rule depend on that; a server relay makes everyone look like one IP).
+ * bit-sign allows CORS from the bpicsx origins on this one path, without credentials.
+ *
+ * Fallback: only if the direct request fails at the network level (bit-sign unreachable or not yet
+ * allowing this origin), we post to our own /api/report relay so a report is never lost. A reply from
+ * bit-sign, including an error or a 429, is final and is never retried through the relay.
+ */
+async function send(apiBase: string, body: string): Promise<Response | null> {
+  try {
+    return await fetch(`${apiBase}/api/bitsign/bpics/report`, {
+      method: 'POST', mode: 'cors', credentials: 'omit', headers: { 'content-type': 'application/json' }, body,
+    });
+  } catch {
+    return fetch('/api/report', { method: 'POST', headers: { 'content-type': 'application/json' }, body }).catch(() => null);
+  }
+}
+
+export default function ReportForm({ initialItem, apiBase }: { initialItem: string; apiBase: string }) {
   const [item, setItem] = useState(initialItem);
   const [reason, setReason] = useState('');
   const [details, setDetails] = useState('');
@@ -15,7 +34,7 @@ export default function ReportForm({ initialItem }: { initialItem: string }) {
     if (!isOutpoint(id)) return setState({ kind: 'err', msg: 'The picture ID looks like <txid>_<number>. Use the Report link on the picture.' });
     if (!reason) return setState({ kind: 'err', msg: 'Pick a reason.' });
     setState({ kind: 'busy' });
-    const res = await fetch('/api/report', { method: 'POST', headers: { 'content-type': 'application/json' }, body: JSON.stringify({ item_id: id, reason, details }) }).catch(() => null);
+    const res = await send(apiBase, JSON.stringify({ item_id: id, reason, details }));
     const out = (await res?.json().catch(() => ({}))) as { error?: string } | undefined;
     if (res?.ok) setState({ kind: 'ok', msg: 'Thank you. Your report has been sent.' });
     else setState({ kind: 'err', msg: out?.error || 'Could not send the report. Please try again.' });
