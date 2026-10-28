@@ -64,6 +64,7 @@ export default function RootLayout({ children }: { children: React.ReactNode }) 
             <Link href="/policy">Safety policy</Link>
             <Link href="/report">Report a picture</Link>
             <a href="https://bwalletx.com">bWalletX</a>
+            <a href="https://bwalletx.com/b-family">Part of the bWalletX family</a>
           </nav>
         </footer>
       </body>
